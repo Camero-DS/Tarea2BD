@@ -1,0 +1,47 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Usuario {
+  id             Int       @id @default(autoincrement())
+  direccion_correo String    @unique
+  descripcion     String?
+  fechaCreacion   DateTime  @default(now())
+  correosEnviados Correo[]  @relation("Enviados")
+  correosRecibidos Correo[] @relation("Recibidos")
+  direccionesBloqueadas DireccionBloqueada[]
+  direccionesFavoritas DireccionFavorita[]
+}
+
+model Correo {
+  id          Int      @id @default(autoincrement())
+  remitente_id Int
+  destinatario_id Int
+  asunto      String
+  cuerpo      String
+  fecha_envio DateTime @default(now())
+  remitente   Usuario  @relation("Enviados", fields: [remitente_id], references: [id])
+  destinatario Usuario @relation("Recibidos", fields: [destinatario_id], references: [id])
+}
+
+model DireccionBloqueada {
+  id               Int      @id @default(autoincrement())
+  usuario_id       Int
+  direccion_bloqueada String
+  fechaBloqueo     DateTime @default(now())
+  usuario          Usuario  @relation(fields: [usuario_id], references: [id])
+}
+
+model DireccionFavorita {
+  id             Int      @id @default(autoincrement())
+  usuario_id     Int
+  direccion_favorita String
+  fecha_agregado DateTime @default(now())
+  usuario        Usuario  @relation(fields: [usuario_id], references: [id])
+}
+
