@@ -14,8 +14,8 @@ model Usuario {
   fechaCreacion   DateTime  @default(now())
   correosEnviados Correo[]  @relation("Enviados")
   correosRecibidos Correo[] @relation("Recibidos")
-  direccionesBloqueadas DireccionBloqueada[]
-  direccionesFavoritas DireccionFavorita[]
+  direccionesBloqueadas Direcciones_bloqueadas[]
+  direccionesFavoritas Direcciones_favoritas[]
 }
 
 model Correo {
@@ -29,19 +29,18 @@ model Correo {
   destinatario Usuario @relation("Recibidos", fields: [destinatario_id], references: [id])
 }
 
-model DireccionBloqueada {
+model Direcciones_bloqueadas {
   id               Int      @id @default(autoincrement())
   usuario_id       Int
   direccion_bloqueada String
-  fechaBloqueo     DateTime @default(now())
+  fecha_bloqueo     DateTime @default(now())
   usuario          Usuario  @relation(fields: [usuario_id], references: [id])
 }
 
-model DireccionFavorita {
+model Direcciones_favoritas {
   id             Int      @id @default(autoincrement())
   usuario_id     Int
   direccion_favorita String
   fecha_agregado DateTime @default(now())
   usuario        Usuario  @relation(fields: [usuario_id], references: [id])
 }
-
