@@ -1,7 +1,9 @@
 -- CreateTable
 CREATE TABLE "Usuario" (
     "id" SERIAL NOT NULL,
+    "nombre" TEXT NOT NULL,
     "direccion_correo" TEXT NOT NULL,
+    "clave" TEXT NOT NULL,
     "descripcion" TEXT,
     "fechaCreacion" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 

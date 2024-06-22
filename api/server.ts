@@ -4,6 +4,23 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 const app = new Elysia();
 
+
+app.post('/api/registrar', async (req) => {
+    const { nombre, direccion_correo, clave, descripcion } = req.body;
+    try {
+        const user = await prisma.usuario.create({
+            data: { nombre, direccion_correo, clave, descripcion },
+        });
+        return { estado: 200, mensaje: 'Se realizo la peticion correctamente', user };
+    } catch (error) {
+        return { estado: 400, mensaje: 'Ha existido un error al realizar la peticion', error: error.message };
+    }
+});
+
+
+
+
+
 app.post('/api/login', async (req) => {
     const { correo, clave } = await req.json();
     const user = await prisma.usuario.findUnique({
