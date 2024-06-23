@@ -4,12 +4,11 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 const app = new Elysia();
 
-
 app.post('/api/registrar', async (req) => {
-    const { nombre, direccion_correo, clave, descripcion } = req.body;
+    const { nombre, correo, clave, descripcion } = await req.json();
     try {
         const user = await prisma.usuario.create({
-            data: { nombre, direccion_correo, clave, descripcion },
+            data: { nombre, direccion_correo: correo, clave, descripcion },
         });
         return { estado: 200, mensaje: 'Se realizo la peticion correctamente', user };
     } catch (error) {
@@ -17,74 +16,91 @@ app.post('/api/registrar', async (req) => {
     }
 });
 
+app.post('/api/bloquear', async (req) => {
+    const { correo, clave, correo_bloquear } = await req.json();
+    try {
+        const user = await prisma.usuario.findUnique({
+            where: { direccion_correo: correo },
+        });
 
-
-
-
-app.post('/api/login', async (req) => {
-    const { correo, clave } = await req.json();
-    const user = await prisma.usuario.findUnique({
-        where: { direccion_correo: correo },
-    });
-    if (user && user.clave === clave) {
-        return { status: 'success' };
+        if (user && user.clave === clave) {
+            const bloqueado = await prisma.direcciones_bloqueadas.create({
+                data: {
+                    usuario_id: user.id,
+                    direccion_bloqueada: correo_bloquear,
+                },
+            });
+            return { estado: 200, mensaje: 'Usuario bloqueado correctamente' };
+        } else {
+            return { estado: 400, mensaje: 'Credenciales incorrectas' };
+        }
+    } catch (error) {
+        return { estado: 400, mensaje: 'Ha existido un error al realizar la peticion', error: error.message };
     }
-    return { status: 'error', message: 'Invalid credentials' };
-});
-
-app.post('/api/correos', async (req) => {
-    const { remitente, destinatario, asunto, cuerpo } = await req.json();
-    const correo = await prisma.correo.create({
-        data: {
-            remitente_id: remitente,
-            destinatario_id: destinatario,
-            asunto,
-            cuerpo,
-        },
-    });
-    return correo;
 });
 
 app.get('/api/informacion/:correo', async (req) => {
     const { correo } = req.params;
-    const user = await prisma.usuario.findUnique({
-        where: { direccion_correo: correo },
-    });
-    if (user) {
-        return user;
-    }
-    return { status: 'error', message: 'User not found' };
-});
-
-app.get('/api/correos/favoritos/:correo', async (req) => {
-    const { correo } = req.params;
-    const user = await prisma.usuario.findUnique({
-        where: { direccion_correo: correo },
-        include: {
-            direccionesFavoritas: true,
-        },
-    });
-    if (user) {
-        return user.direccionesFavoritas;
-    }
-    return { status: 'error', message: 'User not found' };
-});
-
-app.post('/api/correos/marcarcorreo', async (req) => {
-    const { correo, direccion_favorita } = await req.json();
-    const user = await prisma.usuario.findUnique({
-        where: { direccion_correo: correo },
-    });
-    if (user) {
-        const favorita = await prisma.direccion_favoritas.create({
-            data: {
-                usuario_id: user.id,
-                direccion_favorita,
-            },
+    try {
+        const user = await prisma.usuario.findUnique({
+            where: { direccion_correo: correo },
         });
-        return favorita;
+
+        if (user) {
+            const { nombre, direccion_correo, descripcion } = user;
+            return { estado: 200, nombre, correo: direccion_correo, descripcion };
+        } else {
+            return { estado: 400, mensaje: 'Usuario no encontrado' };
+        }
+    } catch (error) {
+        return { estado: 400, mensaje: 'Ha existido un error al realizar la peticion', error: error.message };
     }
-    return { status: 'error', message: 'User not found' };
+});
+
+app.post('/api/marcarcorreo', async (req) => {
+    const { correo, clave, id_correo_favorito } = await req.json();
+    try {
+        const user = await prisma.usuario.findUnique({
+            where: { direccion_correo: correo },
+        });
+
+        if (user && user.clave === clave) {
+            const favorito = await prisma.direcciones_favoritas.create({
+                data: {
+                    usuario_id: user.id,
+                    direccion_favorita: id_correo_favorito.toString(),
+                },
+            });
+            return { estado: 200, mensaje: 'Correo marcado como favorito correctamente' };
+        } else {
+            return { estado: 400, mensaje: 'Credenciales incorrectas' };
+        }
+    } catch (error) {
+        return { estado: 400, mensaje: 'Ha existido un error al realizar la peticion', error: error.message };
+    }
+});
+
+app.delete('/api/desmarcarcorreo', async (req) => {
+    const { correo, clave, id_correo_favorito } = await req.json();
+    try {
+        const user = await prisma.usuario.findUnique({
+            where: { direccion_correo: correo },
+        });
+
+        if (user && user.clave === clave) {
+            await prisma.direcciones_favoritas.deleteMany({
+                where: {
+                    usuario_id: user.id,
+                    direccion_favorita: id_correo_favorito.toString(),
+                },
+            });
+            return { estado: 200, mensaje: 'Correo desmarcado como favorito correctamente' };
+        } else {
+            return { estado: 400, mensaje: 'Credenciales incorrectas' };
+        }
+    } catch (error) {
+        return { estado: 400, mensaje: 'Ha existido un error al realizar la peticion', error: error.message };
+    }
 });
 
 app.listen(3000, () => {
