@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 const app = new Elysia();
 
 app.post('/api/registrar', async (req) => {
-    const { nombre, correo, clave, descripcion } = await req.json();
+    const { nombre, correo, clave, descripcion } = req.body;
     try {
         const user = await prisma.usuario.create({
             data: { nombre, direccion_correo: correo, clave, descripcion },
@@ -17,7 +17,7 @@ app.post('/api/registrar', async (req) => {
 });
 
 app.post('/api/bloquear', async (req) => {
-    const { correo, clave, correo_bloquear } = await req.json();
+    const { correo, clave, correo_bloquear } = req.body;
     try {
         const user = await prisma.usuario.findUnique({
             where: { direccion_correo: correo },
@@ -39,6 +39,63 @@ app.post('/api/bloquear', async (req) => {
     }
 });
 
+//Api para logearse
+
+app.post('/api/login', async (req) => {
+    const { correo, clave } = req.body;
+
+    if (!correo || !clave) {
+        return { estado: 400, mensaje: 'Faltan parámetros en la solicitud.' };
+    }
+    try {
+        const user = await prisma.usuario.findUnique({
+            where: { direccion_correo: correo },
+        });
+
+        if (!user) {
+            return { estado: 400, mensaje: 'Usuario no encontrado.' };
+        }
+
+        // Verificar la contraseña
+        if (user.clave !== clave) {
+            return { estado: 400, mensaje: 'Contraseña incorrecta.' };
+        }
+        return { estado: 200, mensaje: 'Inicio de sesión exitoso.', userId: user.nombre };
+    } catch (error) {
+        return { estado: 400, mensaje: 'Ha existido un error al realizar la petición', error: error.message };
+    }
+});
+
+//Api para enviar correos
+app.post('/api/correos', async (req) => {
+    const { remitente, destinatario, asunto, cuerpo } = req.body;
+
+    if (!remitente || !destinatario || !asunto || !cuerpo) {
+        return { estado: 400, mensaje: 'Faltan parámetros en la solicitud.' };
+    }
+
+    try {
+        const user = await prisma.usuario.findUnique({
+            where: { direccion_correo: remitente },
+        });
+        const user2 = await prisma.usuario.findUnique({
+            where: { direccion_correo: destinatario },
+        });
+        const correo = await prisma.correo.create({
+            data: {
+                remitente_id: user.id,
+                destinatario_id: user2.id,
+                asunto,
+                cuerpo,
+            },
+        });
+        return { estado: 200, mensaje: 'Correo enviado exitosamente.' };
+    } catch (error) {
+        return { estado: 400, mensaje: 'Ha existido un error al enviar el correo', error: error.message };
+    }
+});
+
+
 app.get('/api/informacion/:correo', async (req) => {
     const { correo } = req.params;
     try {
@@ -58,7 +115,7 @@ app.get('/api/informacion/:correo', async (req) => {
 });
 
 app.post('/api/marcarcorreo', async (req) => {
-    const { correo, clave, id_correo_favorito } = await req.json();
+    const { correo, clave, id_correo_favorito } = req.body;
     try {
         const user = await prisma.usuario.findUnique({
             where: { direccion_correo: correo },
@@ -81,7 +138,7 @@ app.post('/api/marcarcorreo', async (req) => {
 });
 
 app.delete('/api/desmarcarcorreo', async (req) => {
-    const { correo, clave, id_correo_favorito } = await req.json();
+    const { correo, clave, id_correo_favorito } = req.body;
     try {
         const user = await prisma.usuario.findUnique({
             where: { direccion_correo: correo },
