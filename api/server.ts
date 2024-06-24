@@ -45,7 +45,7 @@ app.post('/api/login', async (req) => {
     const { correo, clave } = req.body;
 
     if (!correo || !clave) {
-        return { estado: 400, mensaje: 'Faltan parámetros en la solicitud.' };
+        return res.status(400).json({ estado: 400, mensaje: 'Faltan parámetros en la solicitud.' });
     }
     try {
         const user = await prisma.usuario.findUnique({
@@ -53,18 +53,19 @@ app.post('/api/login', async (req) => {
         });
 
         if (!user) {
-            return { estado: 400, mensaje: 'Usuario no encontrado.' };
+            return res.status(404).json({ estado: 404, mensaje: 'Usuario no encontrado.' });
         }
 
-        // Verificar la contraseña
         if (user.clave !== clave) {
-            return { estado: 400, mensaje: 'Contraseña incorrecta.' };
+            return res.status(401).json({ estado: 401, mensaje: 'Contraseña incorrecta.' });
         }
         return { estado: 200, mensaje: 'Inicio de sesión exitoso.', userId: user.nombre };
     } catch (error) {
-        return { estado: 400, mensaje: 'Ha existido un error al realizar la petición', error: error.message };
+        return res.status(500).json({ estado: 500, mensaje: 'Ha existido un error al realizar la petición', error: error.message });
     }
 });
+
+
 
 //Api para enviar correos
 app.post('/api/correos', async (req) => {
@@ -114,8 +115,35 @@ app.get('/api/informacion/:correo', async (req) => {
     }
 });
 
+app.get('/api/correos/favoritos/:correo', async (req) => {
+    const { correo } = req.params;
+
+    try {
+        const user = await prisma.usuario.findUnique({
+            where: { direccion_correo: correo },
+        });
+
+        if (!user) {
+            return { estado: 400, mensaje: 'Usuario no encontrado.' };
+        }
+
+        const direccionesFav = await prisma.direcciones_favoritas.findMany({
+            where: { usuario_id: user.id },
+            select: { direccion_favorita: true },
+        });
+
+        return direccionesFav.map(df => df.direccion_favorita);
+    } catch (error) {
+        return { estado: 400, mensaje: 'Ha existido un error al obtener los correos favoritos', error: error.message };
+    }
+});
+
+
+
+
+
 app.post('/api/marcarcorreo', async (req) => {
-    const { correo, clave, id_correo_favorito } = req.body;
+    const { correo, clave, correo_favorito } = req.body;
     try {
         const user = await prisma.usuario.findUnique({
             where: { direccion_correo: correo },
@@ -125,7 +153,7 @@ app.post('/api/marcarcorreo', async (req) => {
             const favorito = await prisma.direcciones_favoritas.create({
                 data: {
                     usuario_id: user.id,
-                    direccion_favorita: id_correo_favorito.toString(),
+                    direccion_favorita: correo_favorito,
                 },
             });
             return { estado: 200, mensaje: 'Correo marcado como favorito correctamente' };
@@ -138,7 +166,7 @@ app.post('/api/marcarcorreo', async (req) => {
 });
 
 app.delete('/api/desmarcarcorreo', async (req) => {
-    const { correo, clave, id_correo_favorito } = req.body;
+    const { correo, clave, correo_favorito } = req.body;
     try {
         const user = await prisma.usuario.findUnique({
             where: { direccion_correo: correo },
@@ -148,7 +176,7 @@ app.delete('/api/desmarcarcorreo', async (req) => {
             await prisma.direcciones_favoritas.deleteMany({
                 where: {
                     usuario_id: user.id,
-                    direccion_favorita: id_correo_favorito.toString(),
+                    direccion_favorita: correo_favorito,
                 },
             });
             return { estado: 200, mensaje: 'Correo desmarcado como favorito correctamente' };

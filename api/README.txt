@@ -20,3 +20,10 @@ puerto por defecto 5432
     bun run server.ts
 
 La API estará disponible en `http://localhost:3000`.
+
+El marcar correos y desmarcar corresponde a los email por ende si necesita probar su funcionamiento 
+{
+    "correo" : "daniel.duenas@usm.cl",
+    "clave" : "clavecita123",
+    "correo_favorito" : fernando.banz@sansano.usm.cl
+}

@@ -3,30 +3,14 @@ import requests
 BASE_URL = "http://localhost:3000/api"
 
 def main():
-    print("Bienvenido al cliente de CommuniKen")
     
-    while True:
-        print("1. Iniciar sesión")
-        print("2. Registrar nuevo correo")
-        print("3. Salir del programa")
-
-        option = input("¿Qué desea hacer?: ")
-
-        if option == '1':
-            correo = login()
-            if correo == False:
-                print("Credenciales incorrectas. Saliendo del programa.")
-                return
-            break
-        elif option == '2':
-            registrarCorreo()
-        elif option == '3':
-            print("Saliendo del programa.")
-            return
-        else:
-            print("Opción inválida. Intente de nuevo.")
     
-
+    correo = login()
+    
+    if correo == False:
+        print("Credenciales incorrectas. Saliendo del programa.")
+        return
+            
     while True:
         print("\nMenú de opciones:")
         print("1. Enviar un correo")
@@ -44,7 +28,7 @@ def main():
         elif option == '3':
             verCorreosFav(correo)
         elif option == '4':
-            marcarCorreoFav()
+            marcarCorreoFav(correo)
         elif option == '5':
             print("Saliendo del programa.")
             break
@@ -52,10 +36,12 @@ def main():
             print("Opción inválida. Intente de nuevo.")
 
 def login():
-
+    
+    print("Bienvenido al cliente de CommuniKen")
 
     correo = input("Ingrese su correo electrónico: ")
     contraseña = input("Ingrese su contraseña: ")
+    
     url = f'{BASE_URL}/login'
     
     infoLogin = {
@@ -64,35 +50,14 @@ def login():
     }
 
     respuesta = requests.post(url, json = infoLogin)
+    
 
     if respuesta.status_code == 200:
         return correo
     else:
         return False
     
-def registrarCorreo():
     
-    nombre = input("Ingrese su nombre: ")
-    correo= input("Ingrese su correo electrónico: ")
-    contraseña = input("Ingrese su contraseña: ")
-    descripcion = input("Ingrese una descripcion: ")
-    url = f'{BASE_URL}/registrar'
-    
-    registrar_user={
-        "nombre": nombre,
-        "correo": correo,
-        "clave": contraseña,
-        "descripcion": descripcion
-    }
-    
-    respuesta = requests.post(url, json = registrar_user)
-    if respuesta.status_code == 200:
-        return correo
-    else:
-        return False
-    
-    
-
 def enviarCorreo(correoRemitente):
 
     correoDest = input("Ingrese el correo electrónico del destinatario: ")
@@ -130,33 +95,34 @@ def verInfoCorreo():
         print("Error al obtener la información del usuario. Verifique la dirección de correo electrónico.")
 
 def verCorreosFav(correo):
-
     url = f'{BASE_URL}/correos/favoritos/{correo}'
 
     respuesta = requests.get(url)
 
-    if respuesta.status_code != 400:
+    if respuesta.status_code == 200:
         correosFav = respuesta.json()
-        for n in correosFav:
-            if n == 0:
-                n = 1
-            print(f"Correo {n}: {n['correo']}")
+        for idx, direccion in enumerate(correosFav, start=1):
+            print(f"Correo favorito {idx}: {direccion}")
     else:
-        print("Error al obtener los correos favoritos.")
+        print("Error al obtener los correos favoritos.") 
 
-def marcarCorreoFav():
 
-    url = f'{BASE_URL}/correos/marcarcorreo'
 
-    correo = input("Ingrese la dirección de correo electrónico que desea marcar como favorita: ")
-    id_correo =input("Ingrese la id del correo que desea marcar como favorito: ")
+
+def marcarCorreoFav(correo):
+
+    url = f'{BASE_URL}/marcarcorreo'
+    
+    clave= input("Ingrese nuevamente su clave: ")
+
+    email =input("Ingrese el correo que desea marcar como favorito: ")
     correofav = {
-        "remitente": correoRemitente,
-        "destinatario": correoDest,
-        "id_correo_favorito": id_correo,
+        "correo": correo,
+        "clave": clave,
+        "correo_favorito": email,
         
     }
-    respuesta = requests.post(url, json = {"correo": correofav})
+    respuesta = requests.post(url, json = correofav)
     
     if respuesta.status_code == 200:
         print("Correo marcado como favorito exitosamente.")
