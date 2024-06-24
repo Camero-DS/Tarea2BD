@@ -4,5 +4,4 @@
 2. Ejecutar el cliente:
    python cliente.py o python3 cliente.py 
 
-
-Como se explico el tema de las cosas favorticas se refieren todas a las direcciones de correo.
+Como se explico el tema, los correos favoritos se refieren a las direcciones de correo favoritas.
