@@ -64,7 +64,7 @@ app.post('/api/login', async (req) => {
         });
 
         if (!user) {
-            // Búsqueda del usuario por su correo electrónico
+            // Si el usuario no es encontrado
             return res.status(404).json({ estado: 404, mensaje: 'Usuario no encontrado.' });
         }
 
@@ -78,8 +78,6 @@ app.post('/api/login', async (req) => {
         return res.status(500).json({ estado: 500, mensaje: 'Ha existido un error al realizar la petición', error: error.message });
     }
 });
-
-
 
 // Endpoint para enviar correos
 app.post('/api/correos', async (req) => {
